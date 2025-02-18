@@ -1,0 +1,10 @@
+---
+- name: restart sonarqube
+  service:
+    name: sonarqube
+    state: restarted
+
+- name: restart mysql
+  service:
+    name: mysql
+    state: restarted

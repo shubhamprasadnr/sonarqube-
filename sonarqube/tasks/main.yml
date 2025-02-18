@@ -1,0 +1,102 @@
+---
+- name: Install Java 11
+  apt:
+    name: openjdk-11-jdk
+    state: present
+    update_cache: yes
+
+- name: Install MySQL and dependencies
+  apt:
+    name: 
+      - mysql-server
+      - mysql-client
+      - python3-mysqldb
+      - unzip
+    state: present
+
+- name: Start and enable MySQL
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Create MySQL database
+  mysql_db:
+    name: "{{ mysql_database }}"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Create MySQL user
+  mysql_user:
+    name: "{{ mysql_user }}"
+    password: "{{ sonar_mysql_password }}"
+    priv: "{{ mysql_database }}.*:ALL"
+    host: localhost
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Create SonarQube group
+  group:
+    name: sonar
+    state: present
+
+- name: Create SonarQube user
+  user:
+    name: sonar
+    group: sonar
+    shell: /bin/bash
+    home: /opt/sonarqube
+    createhome: no
+
+- name: Download SonarQube
+  get_url:
+    url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonar_version }}.zip"
+    dest: /tmp/sonarqube.zip
+
+- name: Create SonarQube directory
+  file:
+    path: /opt/sonarqube
+    state: directory
+    owner: sonar
+    group: sonar
+
+- name: Extract SonarQube
+  unarchive:
+    src: /tmp/sonarqube.zip
+    dest: /opt
+    remote_src: yes
+    creates: "/opt/sonarqube-{{ sonar_version }}"
+
+- name: Move SonarQube to final location
+  shell: "cp -R /opt/sonarqube-{{ sonar_version }}/* /opt/sonarqube/"
+
+- name: Configure SonarQube properties
+  template:
+    src: sonar.properties.j2
+    dest: /opt/sonarqube/conf/sonar.properties
+    owner: sonar
+    group: sonar
+
+- name: Create systemd service
+  template:
+    src: sonarqube.service.j2
+    dest: /etc/systemd/system/sonarqube.service
+
+- name: Set kernel parameters
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  with_items:
+    - { key: "vm.max_map_count", value: "262144" }
+    - { key: "fs.file-max", value: "65536" }
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Start and enable SonarQube
+  service:
+    name: sonarqube
+    state: started
+    enabled: yes

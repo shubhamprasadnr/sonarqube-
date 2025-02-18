@@ -1,0 +1,6 @@
+---
+mysql_root_password: "sonar123"
+sonar_mysql_password: "sonar123"
+sonar_version: "9.9.0.65466"
+mysql_database: "sonarqube"
+mysql_user: "sonar"

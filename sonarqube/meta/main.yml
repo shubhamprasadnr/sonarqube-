@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  author: Your Name
+  description: SonarQube installation with MySQL
+  company: Your Company
+  license: MIT
+  min_ansible_version: 2.9
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+  galaxy_tags:
+    - sonarqube
+    - code_quality
+    - mysql
+
+dependencies: []
